@@ -135,24 +135,30 @@ const createUser = (user: User) => {
     }
 }
 
-const getUser = (user: User) => {
+const getUser = async (user: User) => {
     try {
 
         const query = db.query(`
             SELECT * FROM users 
-            WHERE username = $username AND password = $password;
+            WHERE username = $username;
         `);
 
-        const checkUser = query.get({
+        const userData: any = query.get({
             $username: user.username,
-            $password: user.password
+            // $password: user.password
         });
 
+        if(!userData){
+            throw new Error('User not found')
+        }
+        
+        const isMatch = await Bun.password.verify(user.password, userData.password)
 
-        if (checkUser) {
-            return {message: true}; 
-        } else {
-            return { message: false };
+        if (!isMatch) {
+            throw new Error('User invalid')
+            // return {message: true}; 
+        } return {
+            loggedIn : true
         }
         
     } catch (error) {
